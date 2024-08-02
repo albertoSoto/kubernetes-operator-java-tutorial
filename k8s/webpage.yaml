@@ -2,6 +2,9 @@ apiVersion: "info.magnolia.k8s.javaoperatorsdk/v1"
 kind: WebPage
 metadata:
   name: hellowp
+#    kubectl create namespace custom-k8s-namespace
+#  namespace: "custom-k8s-namespace"
+  namespace: "default"
 spec:
   html: |
     <html>

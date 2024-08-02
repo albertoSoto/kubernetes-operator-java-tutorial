@@ -44,8 +44,8 @@ public class WebPageReconciler implements Reconciler<WebPage> {
     @Override
     public UpdateControl<WebPage> reconcile(WebPage webPage, Context<WebPage> context) {
         client.configMaps().resource(desiredConfigMap(webPage)).serverSideApply();
-        client.services().resource(desiredService(webPage)).serverSideApply();
-        client.apps().deployments().resource(desiredDeployment(webPage)).serverSideApply();
+//        client.services().resource(desiredService(webPage)).serverSideApply();
+//        client.apps().deployments().resource(desiredDeployment(webPage)).serverSideApply();
         log.info("Reconciliation completed for WebPage {}", webPage.getMetadata().getName());
         webPage.setStatus(new WebPageStatus());
         webPage.getStatus().setReady(true);
@@ -65,7 +65,7 @@ public class WebPageReconciler implements Reconciler<WebPage> {
         ConfigMap desiredConfigMap = new ConfigMapBuilder()
                 .withMetadata(new ObjectMetaBuilder()
                         .withName(webPage.getMetadata().getName())
-                        .withNamespace(webPage.getMetadata().getNamespace())
+                        .withNamespace(webPage.getMetadata().getNamespace()) //we are in a clustered version
                         .build())
                 .withData(Map.of("index.html", webPage.getSpec().getHtml()))
                 .build();
@@ -102,7 +102,7 @@ public class WebPageReconciler implements Reconciler<WebPage> {
 
         var deploymentName = webPage.getMetadata().getName();
         deployment.setMetadata(new ObjectMetaBuilder().withName(deploymentName)
-                .withNamespace(webPage.getMetadata().getNamespace())
+                .withNamespace(webPage.getMetadata().getNamespace())//we are in a clustered version
                 .build());
 
         deployment.getSpec().getSelector().getMatchLabels().put("app", deploymentName);
