@@ -1,0 +1,6 @@
+apiVersion: "info.magnolia.k8s.javaoperatorsdk/v1"
+kind: UpdatedValue
+metadata:
+  name: test1
+spec:
+  value: test

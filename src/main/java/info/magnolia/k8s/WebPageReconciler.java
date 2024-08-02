@@ -1,7 +1,7 @@
 package info.magnolia.k8s;
 
-import info.magnolia.k8s.customResource.WebPage;
-import info.magnolia.k8s.customResource.WebPageStatus;
+import info.magnolia.k8s.staticHtml.WebPage;
+import info.magnolia.k8s.staticHtml.WebPageStatus;
 import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.client.KubernetesClient;

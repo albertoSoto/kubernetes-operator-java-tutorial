@@ -1,4 +1,4 @@
-package info.magnolia.k8s.customResource;
+package info.magnolia.k8s.staticHtml;
 
 public class WebPageStatus {
     private Boolean ready;
