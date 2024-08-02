@@ -44,7 +44,7 @@ public class WebPageReconciler implements Reconciler<WebPage> {
     @Override
     public UpdateControl<WebPage> reconcile(WebPage webPage, Context<WebPage> context) {
         client.configMaps().resource(desiredConfigMap(webPage)).serverSideApply();
-//        client.services().resource(desiredService(webPage)).serverSideApply();
+        client.services().resource(desiredService(webPage)).serverSideApply();
 //        client.apps().deployments().resource(desiredDeployment(webPage)).serverSideApply();
         log.info("Reconciliation completed for WebPage {}", webPage.getMetadata().getName());
         webPage.setStatus(new WebPageStatus());
@@ -56,7 +56,7 @@ public class WebPageReconciler implements Reconciler<WebPage> {
      * Let's define a k8s resource, which we need a name as metadata and we can inject the one from the static resource
      * Name space should be also considered.
      * In terms of the data, we can inject the resource value.
-     * There is a tricky point that is the owner reference
+     * There is a tricky point that is the owner reference needed for GCollector
      *
      * @param webPage
      * @return
