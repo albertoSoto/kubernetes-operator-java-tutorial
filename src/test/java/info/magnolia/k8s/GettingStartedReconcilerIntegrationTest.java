@@ -1,4 +1,4 @@
-package org.acme;
+package info.magnolia.k8s;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;

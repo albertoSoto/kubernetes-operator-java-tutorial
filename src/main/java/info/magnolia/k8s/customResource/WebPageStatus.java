@@ -1,4 +1,4 @@
-package org.acme.customResource;
+package info.magnolia.k8s.customResource;
 
 public class WebPageStatus {
     private Boolean ready;

@@ -1,5 +1,7 @@
-package org.acme;
+package info.magnolia.k8s;
 
+import info.magnolia.k8s.customResource.WebPage;
+import info.magnolia.k8s.customResource.WebPageStatus;
 import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -9,8 +11,6 @@ import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 
-import org.acme.customResource.WebPage;
-import org.acme.customResource.WebPageStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
