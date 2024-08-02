@@ -45,7 +45,7 @@ public class WebPageReconciler implements Reconciler<WebPage> {
     public UpdateControl<WebPage> reconcile(WebPage webPage, Context<WebPage> context) {
         client.configMaps().resource(desiredConfigMap(webPage)).serverSideApply();
         client.services().resource(desiredService(webPage)).serverSideApply();
-//        client.apps().deployments().resource(desiredDeployment(webPage)).serverSideApply();
+        client.apps().deployments().resource(desiredDeployment(webPage)).serverSideApply();
         log.info("Reconciliation completed for WebPage {}", webPage.getMetadata().getName());
         webPage.setStatus(new WebPageStatus());
         webPage.getStatus().setReady(true);

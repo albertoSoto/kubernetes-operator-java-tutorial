@@ -75,8 +75,8 @@ BinaryData
 
 ```
 
-> TBD generate the service layer and deployment which fails at time of writing
-
+Other services for deployment and service layer are going to be 
+generated from the resource template in the classpath resource folder
 
 ### Example 2
 
