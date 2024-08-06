@@ -78,6 +78,32 @@ BinaryData
 Other services for deployment and service layer are going to be 
 generated from the resource template in the classpath resource folder
 
+```bash
+$>  kubectl get services
+
+NAME         TYPE        CLUSTER-IP     EXTERNAL-IP   PORT(S)        AGE
+hellowp      NodePort    10.96.250.22   <none>        80:31792/TCP   4m53s
+kubernetes   ClusterIP   10.96.0.1      <none>        443/TCP        2d2h
+
+$>  kubectl get deployments
+
+NAME      READY   UP-TO-DATE   AVAILABLE   AGE
+hellowp   1/1     1            1           4m21s
+```
+
+The generated page is going to be exposed to the url
+Get the service name: kubectl get service -n test
+URL to a kubernetes service is service-name.namespace.svc.cluster.local:service-port where cluster.local is the kubernetes cluster name.
+To get the cluster name: kubectl config get-contexts | awk {'print $2'}
+
+URL to service in your case will be hellowp.svc.cluster.local:80
+
+```bash
+kubectl describe service hellowp 
+ 
+```
+
+
 ### Example 2
 
 You can proceed the same way with a custom config map definition. Proceed as it follows
