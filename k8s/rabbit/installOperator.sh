@@ -12,6 +12,7 @@ while true; do
   echo "   3 - Check rabbitmq cluster status"
   echo "   4 - Execute installation for custom resource on rabbitmqCluster with messaging-topology-operator"
   echo "   5 - Get kubectl system status"
+  echo "   6 - List pod 0 queues"
   echo "   n - none"
   echo "--------------------------------------------------------------"
 
@@ -28,11 +29,15 @@ while true; do
       echo " > Checking current system status for rabbitmq cluster"
       kubectl -n rabbitmq-system get all ;;
     4 )
-      echo " > Execute installation for custom resource on rabbitmqCluster with messaging-topology-operator"
+      echo " > Execute queue on rabbitmqCluster with messaging-topology-operator"
       # Add your commands for option 4 here
       ;;
     5 )
       kubectl get all ;;
+    6 )
+      kubectl exec -it pod/rabbitmq-cluster-server-0   -- /bin/bash -c "rabbitmqctl list_queues" ;;
+#      rabbitmqctl list_queues
+#      exit
     [Nn]* )
       echo "Exiting..."
       break ;;
