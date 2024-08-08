@@ -1,4 +1,4 @@
-# Generated Project Skeleton
+# JOSDK - Kubernetes operators in java tutorial
 
 Java operators can currently be implemented by Quarkus or by the Official JOSDK
 In this case, we will show how it works with the up to date JOSDK.
