@@ -1,0 +1,11 @@
+apiVersion: rabbitmq.com/v1beta1
+kind: Binding
+metadata:
+  name: binding
+  namespace: rabbitmq-system
+spec:
+  source: test # an existing exchange
+  destination: test # an existing queue
+  destinationType: queue # can be 'queue' or 'exchange'
+  rabbitmqClusterReference:
+    name: rabbitmq-cluster
