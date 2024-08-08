@@ -45,6 +45,8 @@ metadata:
   name: rabbitmq-cluster
 ```
 
+Check full tutorial located at [java-operators.md](java-operators.md) file
+
 
 ### General usage details
 
