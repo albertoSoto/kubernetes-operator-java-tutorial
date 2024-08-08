@@ -7,6 +7,7 @@ while true; do
   echo " RabbitMQ cluster setup"
   echo "--------------------------------------------------------------"
   echo "Choose what do you wanna do:"
+  echo "   0 - Overwrite let's encrypt configuration from the operator"
   echo "   1 - Install official RabbitMq Operators (cluster-operator, messaging-topology-operator)"
   echo "   2 - Deploy RabbitMQ cluster"
   echo "   3 - Check rabbitmq cluster status"
@@ -21,6 +22,11 @@ while true; do
 
   read -p "Which option do you wanna trigger? " userOption
   case $userOption in
+    0 )
+        echo "> Overwriting let's encrypt configuration from the operator to enable local queue setup (enable step 4 locally)"
+        helm repo add jetstack https://charts.jetstack.io
+        helm upgrade --install cert-manager --namespace cert-manager --version v1.2.0 jetstack/cert-manager --set installCRDs=true
+        ;;
     1 )
       echo "> Installing rabbitmq cluster operator"
       kubectl apply -f https://github.com/rabbitmq/cluster-operator/releases/latest/download/cluster-operator.yml
