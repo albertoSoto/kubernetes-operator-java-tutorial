@@ -1,9 +1,15 @@
 # Generated Project Skeleton
 
-A simple operator that deploys a static website page in a kubernetes cluster
+Java operators can currently be implemented by Quarkus or by the Official JOSDK
+In this case, we will show how it works with the up to date JOSDK.
 
 Project originally generated using the official JOSDK
 Based on the repository https://github.com/operator-framework/java-operator-sdk/tree/main/sample-operators/webpage
+Check references for more information
+
+ - Case 1: A simple operator that deploys a static website page in a kubernetes cluster
+ - Case 2: A hello-world web page with multiple pods and a operator that will be called on autoscaling
+ - Case 3: Logic to deploy the official rabbitmq operator
 
 
 ```bash
@@ -13,13 +19,26 @@ $> mvn io.javaoperatorsdk:bootstrapper:4.9.2:create -DprojectGroupId=org.acme -D
 ## Requirements
 
 - JDK 21
+- Kubectl on a local cluster for k8s
 
 ## Basic usage
+
+Generally talking we need to compile the project which will generate the CRD definitions.
+Once the CRD definitions are installed we can install the descriptor that uses our new type.
+
+On the java side, we can execute the project which will implemente a Reconciler. The reconciler is a king of implementations 
+which will hook the kubernetes cycle loop, and inject our logic, therefore, our logic will be a callback for the kubernetes resources.
+The main class will be executing the client for kubernetes and inject the operator in the cycle loop.
+
+Kubernetes will call the logic when resources get updated.
+
+
+### General usage details
 
 - Run a mvn clean package to generate the initial configuration
 
 ```bash
-$> mvn clean package -U -DskipTests -DskipITs -Dmaven.test.skip=true
+$> mvn clean package
 ```
 
 - Check file generation under target/classes/META-INF/fabric8/webpages.info.magnolia.k8s.javaoperatorsdk-v1.yml
@@ -104,7 +123,7 @@ kubectl describe service hellowp
 ```
 
 
-### Example 2
+TBD here 
 
 You can proceed the same way with a custom config map definition. Proceed as it follows
 
@@ -114,6 +133,134 @@ $> kubectl describe configmap hellowp
 $> 
 ```
 
+## Specific use cases
+
+### Case 1: A simple operator that deploys a static website page in a kubernetes cluster
+
+- compile the project as to generate the CRD ()
+- install the crd
+- execute the main class located at src/main/java/info/magnolia/k8s/Runner.java
+- install the webpage
+
+In a nutshell: 
+
+```bash
+$> mvn clean package
+$> kubectl apply -f target/classes/META-INF/fabric8/webpages.info.magnolia.k8s.javaoperatorsdk-v1.yml
+$> java info.magnolia.k8s.Runner
+$> kubectl apply -f k8s/webpage.yaml
+```
+
+You will see a wrong loop when running with the following
+
+```log
+2024-08-08 14:19:17,733 62 i.m.k.WebPageReconciler        [INFO ] Reconciliation completed for WebPage hellowp
+```
+
+What is going to happen is that after deploying the static webpage, a whole setup will be created, 
+using deployments, service and even an ingress deployment. Check them using the following command
+
+```bash
+$> kubectl -n default get all
+NAME                            READY   STATUS    RESTARTS   AGE
+pod/hellowp-67c6586c4-88fgx     1/1     Running   0          67s
+
+NAME                             TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)                        AGE
+service/hellowp                  NodePort    10.107.221.171   <none>        80:30995/TCP                   67s
+
+NAME                      READY   UP-TO-DATE   AVAILABLE   AGE
+deployment.apps/hellowp   1/1     1            1           67s
+
+NAME                                DESIRED   CURRENT   READY   AGE
+replicaset.apps/hellowp-67c6586c4   1         1         1       67s
+```
+
+### Case 2: A hello-world web page with multiple pods and a operator that will be called on autoscaling
+
+In this case we are going to use a common approach for a deployment with an autoscaled cluster of hello-world pods with web content
+After deploying the cluster we will launch our Operator which will listen to the changes in the infra.
+We use this approach to listen to a common specific resource in the cluster when autoscaling
+
+
+How to proceed:
+
+```bash
+$> kubectl apply -f k8s/serviceExample/deployment.yaml
+deployment.apps/hello-world created
+service/hello-world created
+#optional: check if it works
+$> kubectl get pods                                                                                               ✔  1812  14:32:53
+NAME                           READY   STATUS    RESTARTS   AGE
+hello-world-7c8fd6c57f-2cqtw   1/1     Running   0          17s
+hello-world-7c8fd6c57f-8hdsg   1/1     Running   0          17s
+hello-world-7c8fd6c57f-8p922   1/1     Running   0          17s
+hello-world-7c8fd6c57f-vntl4   1/1     Running   0          17s
+$> kubectl port-forward hello-world-7c8fd6c57f-2cqtw 9090:8080
+$> curl http://localhost:9090
+Hello, world!
+Version: 1.0.0
+Hostname: hello-world-7c8fd6c57f-2cqtw
+#operator start up
+$> java info.magnolia.k8s.Runner
+# Replace the value of 'replicas' with the desired number
+$> sed -i "s/replicas: 4/replicas: 5/" deployment.yaml
+$> kubectl apply -f k8s/serviceExample/deployment.yaml
+```
+
+If place a breakpoint it will show all cluster info.
+
+Explanation:
+
+If you check src/main/java/info/magnolia/k8s/serviceAnalysis/HelloWorldServiceReconciler.java
+
+```java
+@ControllerConfiguration(labelSelector = "app=hello-world")
+public class HelloWorldServiceReconciler implements Reconciler<Deployment> {}
+```
+
+will listen to a specific label selector. This label selector must be placed in the metadata of the descriptor:
+
+```yaml
+metadata:
+  labels:
+    app: hello-world
+```
+
+
+### Case 3: Logic to deploy the official rabbitmq operator
+
+In this case we need to deploy and install an operator.
+Is a very tricky situation as installing the operator is easy, but playing with the operator to install new types
+is more tricky
+
+To proceed in detail, run k8s/rabbit/installOperator.sh
+
+It will show a menu like the following:
+
+```bash
+--------------------------------------------------------------
+ RabbitMQ cluster setup
+--------------------------------------------------------------
+Choose what do you wanna do:
+   0 - Overwrite let's encrypt configuration from the operator
+   1 - Install official RabbitMq Operators (cluster-operator, messaging-topology-operator)
+   2 - Deploy RabbitMQ cluster
+   3 - Check rabbitmq cluster status
+   4 - Execute installation for custom resource on rabbitmqCluster with messaging-topology-operator
+   5 - Get kubectl system status
+   6 - List pod 0 queues
+   7 - Inspect topology operator
+   8 - Forward rabbit dashboard to localhost
+   n - none
+--------------------------------------------------------------
+Which option do you wanna trigger? 
+```
+
+You will need to execute option 0 before option 4.
+Please, pay attention that the setup under step 1 will install certManager locally avoiding the error with https.
+You may need helm install to run it too. (step 0)
+
+The port forwarding method is very helpful, as the rabbitmq cluster will have user/pass autogenerated
 
 ### Further Details
 
