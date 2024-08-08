@@ -26,11 +26,24 @@ $> mvn io.javaoperatorsdk:bootstrapper:4.9.2:create -DprojectGroupId=org.acme -D
 Generally talking we need to compile the project which will generate the CRD definitions.
 Once the CRD definitions are installed we can install the descriptor that uses our new type.
 
-On the java side, we can execute the project which will implemente a Reconciler. The reconciler is a king of implementations 
-which will hook the kubernetes cycle loop, and inject our logic, therefore, our logic will be a callback for the kubernetes resources.
+On the java side, we can execute the project which will implemente a Reconciler. The reconciler is a kind of implementation
+that inherits from the official types of Kubernetes. This will hook the kubernetes cycle loop, and inject our logic, 
+therefore, our logic will be a callback for the kubernetes resources.
 The main class will be executing the client for kubernetes and inject the operator in the cycle loop.
 
 Kubernetes will call the logic when resources get updated.
+
+Recap:
+
+A normal definition of a kubernetes descriptor has a type defined by "kind"
+A CRD o Custom resource definition will generate a new type of resources to use in your pipeline.
+
+```yaml
+apiVersion: rabbitmq.com/v1beta1
+kind: RabbitmqCluster
+metadata:
+  name: rabbitmq-cluster
+```
 
 
 ### General usage details
