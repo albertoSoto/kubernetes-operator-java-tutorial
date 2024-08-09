@@ -422,20 +422,6 @@ ADD target/${JAR_FILE} /usr/share/operator/operator.jar
 
 This build also assumes that the artifact produced by maven package is an executable jar file. In the example pom file I use the shader plugin, but you can also use Spring Boot or a number of other methods to do this.
 
-### TBD - The Deployment Resource: Running the Operator
-
-Our operator will be deployed as a normal deployment on Kubernetes. This will ensure there is always a single instance of the operator running. The ’Recreate’ upgrade strategy will make sure that the old version gets shut down first before a new version starts up during an upgrade.
-
-
-### TBD - Permissions to Access the Kubernetes API
-
-src: https://blog.container-solutions.com/cloud-native-java-infrastructure-automation-with-kubernetes-operators
-
-
-Most applications running on Kubernetes don’t need access to the Kubernetes API. However, operators— by definition— do, because they work with resources defined and updated in the API. It is unavoidable to deal with the Kubernetes RBAC (Role Based Access Control) mechanism.
-
-The ClusterRole resource defines a group of permissions. It gives access to do all operations on MySQLSchema resources as well as listing and getting CustomResourceDefinitions. The Operator will of course need to watch all schema resources on the cluster as well as update them when the status changes. As for the CustomResourceDefinitions, the operator needs to get it’s own CRD on startup to get some metadata. This might not be necessary in a future release of the SDK.
-
 
 
 ### Installing Rabbit MQ operator
@@ -458,120 +444,183 @@ $> kubectl describe crd rabbitmqclusters.rabbitmq.com > definition.yaml
 
 More info at: https://www.youtube.com/watch?v=GxdyQSUEj5U
 
+### Permissions to Access the Kubernetes API
+
+src: https://blog.container-solutions.com/cloud-native-java-infrastructure-automation-with-kubernetes-operators
+
+
+Most applications running on Kubernetes don’t need access to the Kubernetes API. 
+However, operators— by definition— do, because they work with resources defined and updated in the API. 
+It is unavoidable to deal with the Kubernetes RBAC (Role Based Access Control) mechanism.
+
+The ClusterRole resource defines a group of permissions. 
+It gives access to do all operations on MySQLSchema resources as well as listing and getting CustomResourceDefinitions. 
+The Operator will of course need to watch all schema resources on the cluster as well as update them when the status changes. 
+As for the CustomResourceDefinitions, the operator needs to get it’s own CRD on startup to get some metadata. This might not be necessary in a future release of the SDK.
+
+### Deploy the operator
+
+Our operator will be deployed as a normal deployment on Kubernetes. This will ensure there is always a single instance of the operator running. The ’Recreate’ upgrade strategy will make sure that the old version gets shut down first before a new version starts up during an upgrade.
+
+
+In this layer we are going to use a Quarkus project, which contains a much better implementation.
+The quarkus implementation does not contain a main class, so all the project works as a focus point.
+
+Remember, as before, we generate the new project with the create app
+Read https://docs.quarkiverse.io/quarkus-operator-sdk/dev/index.html for details.
+
+Let's make a summary of the steps first, and then explain:
+
+The detailed explanation is on the previous info project, but in a nutshell, to generate a operator and deploy in a cluster we need to:
+
+- Install locally the quarkus CLI to generate the project
+- Setup the project with some basics. Quarkus project does not have main class if we use the generator
+
+```bash
+$> quarkus create app info.magnolia:qosdk-test-olm -x='qosdk,olm'
+$> cd qosdk-test-olm
+$> quarkus dev / mvn quarkus:dev
+# press : (column) > qosdk api --help (or just help to see all quarkus dev commands)
+$> : > quarkus-console $>  qosdk api -k customKind -g info.magnolia.k8s -v v1
+Generated src/main/java/k8s/magnolia/info/CustomKindSpec.java
+Generated src/main/java/k8s/magnolia/info/CustomKindReconciler.java
+Generated src/main/java/k8s/magnolia/info/CustomKindStatus.java
+Generated src/main/java/k8s/magnolia/info/CustomKind.java
+```
+
+- Compile. On compilation we need to bring container repository connection, via properties, JVM args or ENV properties
+
+```bash
+$> mvn clean package -Pnative,container 
+-Dquarkus.container-image.registry=localhost:5001 
+-Dquarkus.container-image.group='' 
+-Dquarkus.container-image.name='quarkus-test-operator' 
+-Dquarkus.container-image.tag=latest 
+-Dquarkus.kubernetes.namespace='ns-example'
+```
+
+- Build artifacts
+
+```bash
+$> docker build -t quarkus-test-operator -f ./src/main/docker/Dockerfile.native .
+$> docker images --filter "reference=quarkus-test-operator"
+# docker run -d -p 5001:5000 --name registry registry:latest
+# docker tag quarkus-test-operator:latest localhost:5001/quarkus-test-operator:latest
+# docker push localhost:5001/quarkus-test-operator:latest
+$> docker push <your-registry-url>/<your-image-name>:latest
+```
+
+- Deploy
+
+  > It’s recommended a specific namespace as otherwise it collides with perms on default settings of kubernetes. You need to specify the namespace on compilation time.
+  
+    - To create a namespace and perms properly, from the previous example do:
+
+    ```bash
+    kubectl create namespace ns-example
+    ```
+
+    - Create clusterole
+
+        ```yaml
+        apiVersion: rbac.authorization.k8s.io/v1
+        kind: ClusterRole
+        metadata:
+          name: qosdk-test
+        rules:
+          - apiGroups:
+              - info.magnolia.k8s
+            resources:
+              - customkinds
+            verbs:
+              - get
+              - list
+              - watch
+        ```
+
+    - Create binding for the cluster role
+
+    ```yaml
+    apiVersion: rbac.authorization.k8s.io/v1
+    kind: ClusterRoleBinding
+    metadata:
+      name: qosdk-test-binding
+    subjects:
+      - kind: ServiceAccount
+        name: qosdk-test
+        namespace: ns-example
+    roleRef:
+      kind: ClusterRole
+      name: qosdk-test
+      apiGroup: rbac.authorization.k8s.io
+    ```
+
+    - Apply them
+
+    ```bash
+    kubectl apply -f qosdk-test-clusterrole.yaml
+    kubectl apply -f qosdk-test-clusterrolebinding.yaml
+    ```
+
+    - To deploy, after this details it should be straight away. The deployment will create all the k8s resources automatically.
+
+  > You need access to the target folder of the compiled resources. Consider for CICD adding them as an artifact for /target/kubernetes folder
+>
+
+```bash
+
+## Let's generate the CRD definitions and install them in the cluster
+$> kubectl apply -f target/kubernetes/customkinds.info.magnolia.k8s-v1.yml
+## This is the deployment for the infrastructure of the operator in the cluster. 
+$> kubectl apply -f target/kubernetes/kubernetes.yml
+
+```
+
+All at once recipe, without the perms:
+
+```bash
+$> quarkus create app info.magnolia:qosdk-test-olm -x='qosdk,olm'
+$> cd qosdk-test-olm
+# We generate some CRD definitions and logic as the project is empty
+$> quarkus dev / mvn quarkus:dev
+# press : (column) > qosdk api --help (or just help to see all quarkus dev commands)
+$> : > quarkus-console $>  qosdk api -k customKind -g info.magnolia.k8s -v v1beta1
+Generated src/main/java/k8s/magnolia/info/CustomKindSpec.java
+Generated src/main/java/k8s/magnolia/info/CustomKindReconciler.java
+Generated src/main/java/k8s/magnolia/info/CustomKindStatus.java
+Generated src/main/java/k8s/magnolia/info/CustomKind.java
+# Here we need to generate the crd-gen profile. See section and modify the pom file
+# We package it and deploy it
+#quarkus.container-image.group=quarkus #optional, default to the system username
+#quarkus.container-image.name=demo-app #optional, defaults to the application name
+#quarkus.container-image.tag=1.0       #optional, defaults to the application version
+# We also need to build with a custom namespace quarkus.kubernetes.namespace
+$> kubectl create namespace ns-example
+$> mvn clean package -Pnative,container -Dquarkus.container-image.registry=localhost:5001 -Dquarkus.container-image.group='' -Dquarkus.container-image.name='quarkus-test-operator' -Dquarkus.container-image.tag=latest -Dquarkus.kubernetes.namespace='default' -Dquarkus.kubernetes.namespace='ns-example'
+$> docker build -t quarkus-test-operator -f ./src/main/docker/Dockerfile.native .
+$> docker images --filter "reference=quarkus-test-operator"
+## Publish image. Consider using a local registry as explained here https://www.docker.com/blog/how-to-use-your-own-registry-2/
+# docker run -d -p 5001:5000 --name registry registry:latest
+# docker logs -f registry
+# docker tag quarkus-test-operator:latest localhost:5001/quarkus-test-operator:latest
+# docker push localhost:5001/quarkus-test-operator:latest
+$> docker push <your-registry-url>/<your-image-name>:latest
+## Let's generate the CRD definitions and install them in the cluster
+$> kubectl apply -f target/kubernetes/customkinds.info.magnolia.k8s-v1.yml
+## This is the deployment for the infrastructure of the operator in the cluster. 
+$> kubectl apply -f target/kubernetes/kubernetes.yml
+```
+
+References:
+
+- https://computingforgeeks.com/how-to-deploy-and-use-quarkus-in-kubernetes/
+- https://docs.quarkiverse.io/quarkus-operator-sdk/dev/deploy-with-olm.html
+- https://operatorframework.io/docs/installation/olm/
 
 ### TBD Unit testing it
 
-// https://www.docker.com/blog/develop-kubernetes-operators-in-java-without-breaking-a-sweat/
+See https://www.docker.com/blog/develop-kubernetes-operators-in-java-without-breaking-a-sweat/
 
-
-
-### How to fix Forbidden access
-
-// When executing the boilerplate there is an error on the k8s endpoint, which may look like to the following:
-
-// ```json
-// {
-//   "kind": "Status",
-//   "apiVersion": "v1",
-//   "metadata": {},
-//   "status": "Failure",
-//   "message": "gettingstartedcustomresources.org.acme is forbidden: User \"system:anonymous\" cannot list resource \"gettingstartedcustomresources\" in API group \"org.acme\" at the cluster scope",
-//   "reason": "Forbidden",
-//   "details": {
-//     "group": "org.acme",
-//     "kind": "gettingstartedcustomresources"
-//   },
-//   "code": 403
-// }
-// ```
-
-// The error message indicates that the user `system:anonymous` does not have permission to list the `gettingstartedcustomresources` resource in the `org.acme` API group. To solve this issue, you need to set up appropriate Role-Based Access Control (RBAC) rules to grant the necessary permissions to the service account that your operator is using.
-
-// Here's how you can set up RBAC to grant the required permissions:
-
-// ### Step 1: Identify the Service Account
-// Determine which service account your operator is using. This is typically specified in your operator's deployment YAML under `spec.serviceAccountName`.
-
-// ### Step 2: Create a ClusterRole
-// Create a ClusterRole that defines the permissions needed. For example:
-
-// ```yaml
-// apiVersion: rbac.authorization.k8s.io/v1
-// kind: ClusterRole
-// metadata:
-//   name: gettingstartedcustomresources-reader
-// rules:
-// - apiGroups: ["org.acme"]
-//   resources: ["gettingstartedcustomresources"]
-//   verbs: ["get", "list", "watch"]
-// ```
-
-// ### Step 3: Create a ClusterRoleBinding
-// Bind the ClusterRole to the service account that your operator uses. Replace `your-namespace` with the namespace of your operator and `your-service-account` with the name of the service account.
-
-// ```yaml
-// apiVersion: rbac.authorization.k8s.io/v1
-// kind: ClusterRoleBinding
-// metadata:
-//   name: gettingstartedcustomresources-reader-binding
-// roleRef:
-//   apiGroup: rbac.authorization.k8s.io
-//   kind: ClusterRole
-//   name: gettingstartedcustomresources-reader
-// subjects:
-// - kind: ServiceAccount
-//   name: your-service-account
-//   namespace: your-namespace
-// ```
-
-// ### Step 4: Apply the RBAC Resources
-// Apply the ClusterRole and ClusterRoleBinding to your Kubernetes cluster:
-
-// ```sh
-// kubectl apply -f path/to/clusterrole.yaml
-// kubectl apply -f path/to/clusterrolebinding.yaml
-// ```
-
-// ### Example YAML Files
-// Here are example YAML files for the ClusterRole and ClusterRoleBinding.
-
-// **clusterrole.yaml:**
-// ```yaml
-// apiVersion: rbac.authorization.k8s.io/v1
-// kind: ClusterRole
-// metadata:
-//   name: gettingstartedcustomresources-reader
-// rules:
-// - apiGroups: ["org.acme"]
-//   resources: ["gettingstartedcustomresources"]
-//   verbs: ["get", "list", "watch"]
-// ```
-
-// **clusterrolebinding.yaml:**
-// ```yaml
-// apiVersion: rbac.authorization.k8s.io/v1
-// kind: ClusterRoleBinding
-// metadata:
-//   name: gettingstartedcustomresources-reader-binding
-// roleRef:
-//   apiGroup: rbac.authorization.k8s.io
-//   kind: ClusterRole
-//   name: gettingstartedcustomresources-reader
-// subjects:
-// - kind: ServiceAccount
-//   name: your-service-account
-//   namespace: your-namespace
-// ```
-
-// ### Verify the Configuration
-// After applying the RBAC resources, verify that the permissions are correctly set:
-
-// ```sh
-// kubectl get clusterrolebinding gettingstartedcustomresources-reader-binding -o yaml
-// kubectl get clusterrole gettingstartedcustomresources-reader -o yaml
-// ```
-
-// By setting up these RBAC rules, you should grant the necessary permissions to your operator's service account, allowing it to list and watch the `gettingstartedcustomresources` in the `org.acme` API group. This should resolve the `403 Forbidden` error.
 
 ## References
 
@@ -624,6 +673,8 @@ Additional:
 - https://www.docker.com/blog/develop-kubernetes-operators-in-java-without-breaking-a-sweat/
 - https://blog.container-solutions.com/cloud-native-java-infrastructure-automation-with-kubernetes-operators
 
+k8s:
+- https://computingforgeeks.com/how-to-deploy-and-use-quarkus-in-kubernetes/
 
 
 ### Q&A

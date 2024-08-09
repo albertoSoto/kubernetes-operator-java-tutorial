@@ -304,6 +304,7 @@ Read training:
 - https://javaoperatorsdk.io/docs/using-samples/
 
 From redhat
+- https://quarkus.io/guides/deploying-to-kubernetes#deploying < Important!
 - https://developers.redhat.com/articles/2023/08/16/how-implement-kubernetes-operators-java-operator-sdk#
 - https://developers.redhat.com/articles/2022/03/22/write-kubernetes-java-java-operator-sdk-part-2#
 
