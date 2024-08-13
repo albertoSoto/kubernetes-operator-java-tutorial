@@ -41,11 +41,17 @@ The problem will be serving it, but is an example of custom resource
 ### Operator frameworks
 
 - Go is the most famous (k8s is implemented in go)
-- In java we have the JavaOperatorSdk and the Fabric client
-- Java operator Sdk
-  It's a framework offered as a quarkus extension
+- In java we have the JavaOperatorSdk with the Fabric client as helpful generator.
+- Java operator Sdk or JOSDK is accessible from any framework
+- The JOSDK has community support for Quarkus & Spring as extensions
+  It's a framework offered as a quarkus extension too
   Also exists a spring boot starter
 - If the service is generally implemented in java, the operator can follow the same language.
+
+JDK version Info
+
+- JOSDK - Java operators sdk supports JDK11
+- Quarkus adapter recommends JDK21. Minimum is JDK17
 
 ### How to start
 
