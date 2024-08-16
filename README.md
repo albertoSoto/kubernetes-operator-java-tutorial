@@ -3,6 +3,15 @@
 Java operators can currently be implemented by Quarkus or by the Official JOSDK
 In this case, we will show how it works with the up to date JOSDK.
 
+One of the use cases for an operator is to create a template (custom resource) where some values are set in the creation time. The biggest difference between a file template and an operator is that the common content (in the case of a template) is static, whereas in an operator it is set programmatically, which means that you’ve got the freedom to change the definition of the common part dynamically. This is known as a custom resource, in which, instead of using a well-known Kubernetes resource, you implement your own custom Kubernetes resource with your own fields.
+
+Another use case might be to react/operate when something happens inside the cluster. Suppose you’ve got some in-memory data grids deployed on the cluster, and one of these instances dies. Maybe in this case what you want is to notify all living instances that one of the elements of the data grid cluster has been stopped.
+
+As you can see, it is about not only the creation of a resource but also applying some tasks that are specific to your application that need to be done atop one of the tasks that Kubernetes is already doing.
+
+The Kubernetes Operator uses Kubernetes API to decide when and how to run some of these customizations.
+
+
 Project originally generated using the official JOSDK
 Based on the repository https://github.com/operator-framework/java-operator-sdk/tree/main/sample-operators/webpage
 Check references for more information
@@ -11,6 +20,7 @@ Check references for more information
  - Case 2: A hello-world web page with multiple pods and a operator that will be called on autoscaling
  - Case 3: Logic to deploy the official rabbitmq operator
 
+Start just typing the following:
 
 ```bash
 $> mvn io.javaoperatorsdk:bootstrapper:4.9.2:create -DprojectGroupId=org.acme -DprojectArtifactId=getting-started
