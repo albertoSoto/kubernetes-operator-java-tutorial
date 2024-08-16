@@ -312,6 +312,9 @@ Read training:
 - https://quarkus.io/guides/getting-started
 - https://blog.lunatech.com/posts/2021-06-11-kubernetes-operator-with-java-and-quarkus
 - https://javaoperatorsdk.io/docs/using-samples/
+- By Alex Soto
+  https://github.com/lordofthejars/pizza-operator-java-sdk
+  https://www.oreilly.com/library/view/quarkus-cookbook/9781492062646/
 
 From redhat
 - https://quarkus.io/guides/deploying-to-kubernetes#deploying < Important!
