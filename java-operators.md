@@ -603,6 +603,9 @@ Generated src/main/java/k8s/magnolia/info/CustomKind.java
 # We also need to build with a custom namespace quarkus.kubernetes.namespace
 $> kubectl create namespace ns-example
 $> mvn clean package -Pnative,container -Dquarkus.container-image.registry=localhost:5001 -Dquarkus.container-image.group='' -Dquarkus.container-image.name='quarkus-test-operator' -Dquarkus.container-image.tag=latest -Dquarkus.kubernetes.namespace='default' -Dquarkus.kubernetes.namespace='ns-example'
+# Alternatively do not bind name space
+#$> mvn clean package -Dquarkus.container-image.registry=localhost:5001 -Dquarkus.container-image.group='' -Dquarkus.container-image.name='quarkus-test-operator' -Dquarkus.container-image.tag=latest
+#$> kubectl apply -f target/kubernetes/kubernetes.yml -n=ns-example
 $> docker build -t quarkus-test-operator -f ./src/main/docker/Dockerfile.native .
 $> docker images --filter "reference=quarkus-test-operator"
 ## Publish image. Consider using a local registry as explained here https://www.docker.com/blog/how-to-use-your-own-registry-2/

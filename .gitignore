@@ -39,3 +39,6 @@ nb-configuration.xml
 # Local environment
 .env
 
+/k8s/openapi/generated-rabbit/
+/k8s/openapi/kubernetes-cluster-generated/
+/k8s/openapi/api-spec.json
