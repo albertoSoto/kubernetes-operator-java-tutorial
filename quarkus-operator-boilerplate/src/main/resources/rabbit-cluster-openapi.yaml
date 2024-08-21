@@ -1,0 +1,56 @@
+openapi: 3.0.0
+info:
+  title: RabbitCluster API
+  version: v1alpha1
+paths:
+  /apis/rabbitmq.com/v1alpha1/namespaces/{namespace}/rabbitclusters:
+    get:
+      summary: Get a list of RabbitClusters
+      parameters:
+        - name: namespace
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: A list of RabbitClusters
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RabbitCluster'
+components:
+  schemas:
+    ObjectMeta:
+      type: object
+      properties:
+        name:
+          type: string
+        namespace:
+          type: string
+        labels:
+          type: object
+          additionalProperties:
+            type: string
+        annotations:
+          type: object
+          additionalProperties:
+            type: string
+    RabbitCluster:
+      type: object
+      properties:
+        apiVersion:
+          type: string
+        kind:
+          type: string
+        metadata:
+          type: object
+        spec:
+          type: object
+          properties:
+            replicas:
+              type: integer
+            image:
+              type: string
