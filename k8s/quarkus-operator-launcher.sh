@@ -4,6 +4,7 @@ cd "$SCRIPT_DIR"
 
 GROUP_ID="info.magnolia.k8s"
 PROJECT_ID="quarkus-operator-demo"
+DISABLE_FOLDER_NAVIGATION="n"
 
 while true; do
   echo "--------------------------------------------------------------"
@@ -18,6 +19,7 @@ while true; do
   echo "   5 - Compile the project"
   echo "   6 - Generate docker image and publish locally"
   echo "   7 - deploy to current kubernetes cluster"
+  echo "   8 - Disable folder navigation"
   echo "   n - none"
   echo "--------------------------------------------------------------"
 
@@ -46,29 +48,41 @@ while true; do
       ;;
     4 )
       echo "-->   4 - Project dev"
-      cd "$PROJECT_ID" || exit
-      quarkus dev
-      cd ..
+      if [ "$DISABLE_FOLDER_NAVIGATION" != "y" ]; then
+        cd "$PROJECT_ID" || exit
+        quarkus dev
+        cd ..
+      fi
       ;;
     5 )
       echo "-->   5 - Compile the project"
-      cd "$PROJECT_ID" || exit
-      mvn clean package -Dquarkus.container-image.build=true -Dquarkus.container-image.registry=localhost:5001 -Dquarkus.container-image.group='' -Dquarkus.container-image.name="$PROJECT_ID" -Dquarkus.container-image.tag=latest
-      cd ..
+      if [ "$DISABLE_FOLDER_NAVIGATION" != "y" ]; then
+        cd "$PROJECT_ID" || exit
+        mvn clean package -Dquarkus.container-image.build=true -Dquarkus.container-image.registry=localhost:5001 -Dquarkus.container-image.group='' -Dquarkus.container-image.name="$PROJECT_ID" -Dquarkus.container-image.tag=latest
+        cd ..
+      fi
       ;;
     6 )
       echo "-->   6 - Generate docker image and publish locally"
-      cd "$PROJECT_ID" || exit
-      docker build -t "$PROJECT_ID" -f ./src/main/docker/Dockerfile.jvm .
-      docker tag "$PROJECT_ID":latest localhost:5001/"$PROJECT_ID":latest
-      docker push localhost:5001/"$PROJECT_ID":latest
-      cd ..
+      if [ "$DISABLE_FOLDER_NAVIGATION" != "y" ]; then
+        cd "$PROJECT_ID" || exit
+        docker build -t "$PROJECT_ID" -f ./src/main/docker/Dockerfile.jvm .
+        docker tag "$PROJECT_ID":latest localhost:5001/"$PROJECT_ID":latest
+        docker push localhost:5001/"$PROJECT_ID":latest
+        cd ..
+      fi
       ;;
     7 )
       echo "-->   7 - deploy to current kubernetes cluster"
-      cd "$PROJECT_ID" || exit
-      kubectl apply -f ./target/kubernetes/kubernetes.yml
-      cd ..
+      if [ "$DISABLE_FOLDER_NAVIGATION" != "y" ]; then
+        cd "$PROJECT_ID" || exit
+        kubectl apply -f ./target/kubernetes/kubernetes.yml
+        cd ..
+      fi
+      ;;
+    8 )
+      echo "-->   8 - Disable folder navigation"
+      read -p "Do you want to disable folder navigation? (y/n): " DISABLE_FOLDER_NAVIGATION
       ;;
     [Nn]* )
       echo "Exiting..."
